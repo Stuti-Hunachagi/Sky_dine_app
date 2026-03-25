@@ -200,6 +200,20 @@ app.post("/api/resto/saveProduct", async (req, res) => {
   }
 });
 
+// Add this in server.js
+app.get('/api/resto/getProduct', async (req, res) => {
+  try {
+    const { clientId } = req.query;
+    const response = await axios.get(`https://civil.skitechno.com/api/resto/getProduct`, {
+      params: { clientId }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching Products:', error.message);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
 app.post('/api/resto/saveMenu', async (req, res) => {
   try {
     const externalApiUrl = 'https://civil.skitechno.com/api/resto/saveMenu';
@@ -220,6 +234,20 @@ app.post('/api/resto/saveMenu', async (req, res) => {
       message: 'Failed to connect to external menu save API',
       error: error.response?.data || error.message,
     });
+  }
+});
+
+// Add this in server.js
+app.get('/api/resto/getMenu', async (req, res) => {
+  try {
+    const { clientId } = req.query;
+    const response = await axios.get(`https://civil.skitechno.com/api/resto/getMenu`, {
+      params: { clientId }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching Menu:', error.message);
+    res.status(500).json({ error: 'Failed to fetch menu' });
   }
 });
 
@@ -246,6 +274,20 @@ app.post('/api/resto/saveEmpCategory', async (req, res) => {
   }
 });
 
+// Add this in server.js alongside your other routes
+app.get('/api/resto/getEmpCategory', async (req, res) => {
+  try {
+    const { clientId } = req.query;
+    const response = await axios.get(`https://civil.skitechno.com/api/resto/getEmpCategory`, {
+      params: { clientId }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching Employee Categories:', error.message);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
 
 app.post('/api/resto/saveCounter', async (req, res) => {
   try {
@@ -267,6 +309,23 @@ app.post('/api/resto/saveCounter', async (req, res) => {
       message: 'Failed to connect to external counter save API',
       error: error.response?.data || error.message,
     });
+  }
+});
+
+// Add this alongside your existing POST route in server.js
+
+app.get('/api/resto/getCounter', async (req, res) => {
+  try {
+    const { clientId } = req.query; // Get the clientId from the frontend request
+    
+    const response = await axios.get(`https://civil.skitechno.com/api/resto/getCounter`, {
+      params: { clientId } // Forward the clientId to the external API
+    });
+
+    res.json(response.data); // Send the data back to your React app
+  } catch (error) {
+    console.error('Error fetching from external API:', error.message);
+    res.status(500).json({ error: 'Failed to fetch counters' });
   }
 });
 
