@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios'); // npm install axios
 const app = express();
-
+const BASE_URL = "https://civil.skitechno.com/api/resto";
 app.use(cors()); // Permits localhost:3000 to access this server
 app.use(express.json());
 
@@ -344,6 +344,48 @@ app.post("/api/resto/saveEmployee", async (req, res) => {
   } catch (error) {
     console.error("saveEmployee proxy error:", error);
     res.status(500).json({ error: "Failed to save employee" });
+  }
+});
+
+app.get("/api/getBill", async (req, res) => {
+  try {
+    const { orderId } = req.query;
+
+    const response = await fetch(
+      `${BASE_URL}/getBill?orderId=${orderId}`
+    );
+
+    const data = await response.json();
+
+    res.json(data);
+  } catch (error) {
+    console.error("GET ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/resto/saveOrder", async (req, res) => {
+  try {
+    console.log("Saving Order to C#:", req.body);
+    const response = await axios.post(`${BASE_URL}/saveOrder`, req.body);
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error("Order Save Error:", error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      success: false,
+      message: "Failed to save order on server",
+      error: error.response?.data
+    });
+  }
+});
+
+app.get("/api/resto/getBill", async (req, res) => {
+  try {
+    const { orderId } = req.query;
+    const response = await axios.get(`${BASE_URL}/getBill`, { params: { orderId } });
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching bill" });
   }
 });
 
