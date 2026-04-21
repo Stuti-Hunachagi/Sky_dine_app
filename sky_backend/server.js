@@ -10,6 +10,13 @@ app.get("/test", (req, res) => {
   res.send("Backend working correctly");
 });
 
+const multer = require("multer");
+
+const upload = multer({ dest: "uploads/" });
+const FormData = require("form-data");
+const fs = require("fs");
+
+
 
 // 1. Endpoint for Company Registration
 app.post('/api/addResto', async (req, res) => {
@@ -329,23 +336,51 @@ app.get('/api/resto/getCounter', async (req, res) => {
   }
 });
 
-app.post("/api/resto/saveEmployee", async (req, res) => {
-  try {
-    const response = await fetch("https://civil.skitechno.com/api/resto/saveEmployee", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(req.body),
-    });
+app.post(
+  "/api/resto/saveEmployee",
+  upload.single("PHOTO_PATH"), // ✅ important
+  async (req, res) => {
+    try {
 
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error) {
-    console.error("saveEmployee proxy error:", error);
-    res.status(500).json({ error: "Failed to save employee" });
+      console.log("BODY:", req.body);
+      console.log("FILE:", req.file);
+
+      const formData = new FormData();
+
+      // ✅ append text fields
+      formData.append("NAME", req.body.NAME);
+      formData.append("CITY", req.body.CITY);
+      formData.append("PINCODE", req.body.PINCODE);
+      formData.append("MOBILE1", req.body.MOBILE1);
+      formData.append("clientId", req.body.clientId);
+
+      // ✅ append file
+      if (req.file) {
+        formData.append(
+          "PHOTO_PATH",
+          fs.createReadStream(req.file.path)
+        );
+      }
+
+      // ✅ send to actual API
+      const response = await axios.post(
+        "https://civil.skitechno.com/api/resto/saveEmployee",
+        formData,
+        {
+          headers: formData.getHeaders(),
+        }
+      );
+
+      res.json(response.data);
+    } catch (error) {
+      console.error("saveEmployee error:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to save employee",
+      });
+    }
   }
-});
+);
 
 app.get("/api/getBill", async (req, res) => {
   try {
@@ -364,21 +399,6 @@ app.get("/api/getBill", async (req, res) => {
   }
 });
 
-app.post("/api/resto/saveOrder", async (req, res) => {
-  try {
-    console.log("Saving Order to C#:", req.body);
-    const response = await axios.post(`${BASE_URL}/saveOrder`, req.body);
-    res.status(200).json(response.data);
-  } catch (error) {
-    console.error("Order Save Error:", error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({
-      success: false,
-      message: "Failed to save order on server",
-      error: error.response?.data
-    });
-  }
-});
-
 app.get("/api/resto/getBill", async (req, res) => {
   try {
     const { orderId } = req.query;
@@ -388,6 +408,51 @@ app.get("/api/resto/getBill", async (req, res) => {
     res.status(500).json({ success: false, message: "Error fetching bill" });
   }
 });
+
+
+// ✅ SAVE ORDER
+app.post("/api/resto/saveOrder", async (req, res) => {
+  try {
+    const response = await fetch(
+      "https://civil.skitechno.com/api/resto/saveOrder",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(req.body),
+      }
+    );
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Proxy Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+// In server.js
+app.post('/api/resto/addItemsToOrder', async (req, res) => {
+    try {
+        const response = await axios.post('https://civil.skitechno.com/api/resto/addItemsToOrder', req.body);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/proxy/closeOrder', async (req, res) => {
+  const { orderId } = req.query; // Takes 'orderId' from the URL
+  try {
+    const response = await axios.post(`https://civil.skitechno.com/api/resto/closeOrder?orderId=${orderId}`);
+    res.json(response.data); // This sends {"success": true} back to React
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
 const PORT = 5000;
 
